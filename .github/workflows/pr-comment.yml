@@ -18,44 +18,22 @@
 name: PR Comment Build
 
 on:
-  issue_comment:
-    types: [created]
+  workflow_dispatch:
+    inputs:
+      test-filter:
+        description: 'Maven test selector (e.g. -Dtest=Foo -Dit.test=BarIT); empty runs the full camel-kafka suite'
+        required: false
+        default: ''
 jobs:
   pr_commented:
     name: PR comment
-    if: ${{ github.repository == 'apache/camel' && github.event.issue.pull_request && startsWith(github.event.comment.body, '/component-test') }}
-    permissions:
-      pull-requests: write # to comment on a pull request
-      actions: read # to download artifact
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
+    timeout-minutes: 55
     strategy:
       matrix:
         java: [ '17' ]
     steps:
-      - uses: actions/github-script@v6
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: `:robot: The Apache Camel test robot will run the tests for you :+1:`
-            })
-      - name: Retrieve sha
-        uses: actions/github-script@v6
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const pr = await github.rest.pulls.get({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  pull_number: context.issue.number
-            });
-            core.exportVariable('pr_sha', pr.data.head.sha)
       - uses: actions/checkout@v3
-        with:
-          ref: ${{ env.pr_sha }}
       - id: install-packages
         uses: ./.github/actions/install-packages
       - name: Set up JDK ${{ matrix.java }}
@@ -64,12 +42,74 @@ jobs:
           distribution: 'temurin'
           java-version: ${{ matrix.java }}
           cache: 'maven'
-      - id: test
-        name: Component test execution
-        uses: ./.github/actions/component-test
+      - name: Allow the Testcontainers 1.18 Docker API version on Docker Engine 29+
+        shell: bash
+        run: |
+          ver=$(docker version --format '{{.Server.Version}}')
+          echo "Docker server ${ver}"
+          if [ "${ver%%.*}" -ge 29 ]; then
+            f=/etc/docker/daemon.json
+            [ -f "$f" ] || echo '{}' | sudo tee "$f" >/dev/null
+            sudo jq '. + {"min-api-version": "1.32"}' "$f" | sudo tee "$f.new" >/dev/null
+            sudo mv "$f.new" "$f"
+            sudo systemctl restart docker
+            docker version
+          fi
+      - id: install-mvnd
+        uses: ./.github/actions/install-mvnd
+      - name: maven build
+        shell: bash
+        run: |
+          trap 'tail -n 80 build.log' EXIT
+          .github/actions/component-test/component-test.sh ${{ steps.install-mvnd.outputs.mvnd-dir }}/mvnd "/component-test kafka" true build.log
+      - name: maven test
+        shell: bash
+        run: |
+          # Source-format/license rewrite plugins of the full profile are not tests
+          export MVND_OPTS="$MVND_OPTS -Dformatter.skip=true -Dimpsort.skip=true -Dlicense.skip=true"
+          if [ -n "${{ inputs.test-filter }}" ]; then
+            export MVND_OPTS="$MVND_OPTS -Dsurefire.failIfNoSpecifiedTests=false -Dfailsafe.failIfNoSpecifiedTests=false ${{ inputs.test-filter }}"
+          fi
+          set +e
+          .github/actions/component-test/component-test.sh ${{ steps.install-mvnd.outputs.mvnd-dir }}/mvnd "/component-test kafka" false tests.log
+          ret=$?
+          echo "===== per-class test results ====="
+          grep -E "Tests run: [0-9]+, Failures: [0-9]+, Errors: [0-9]+, Skipped: [0-9]+, Time elapsed" tests.log | sed -E 's/^.*(Tests run:)/\1/'
+          echo "===== skipped tests (with reason) ====="
+          python3 - <<'PY'
+          import glob, xml.etree.ElementTree as ET
+          seen = {}
+          for f in glob.glob('components/camel-kafka/target/*-reports*/TEST-*.xml'):
+              for tc in ET.parse(f).getroot().iter('testcase'):
+                  sk = tc.find('skipped')
+                  if sk is not None:
+                      reason = (sk.get('message') or (sk.text or '').strip() or 'no reason given').splitlines()[0]
+                      seen.setdefault(reason, []).append(tc.get('classname', '') + '#' + tc.get('name', ''))
+          notes = {
+              "[kafka.instance.type]": "upstream @EnabledIfSystemProperties ANDs two conditions requiring kafka.instance.type to equal both 'local-kafka3-container' and 'kafka', so no property value can enable these tests in this release",
+              "[bootstrapServers]": "manual test: needs an externally provisioned SASL Kafka broker plus credentials (bootstrapServers, kafka.manual.test.topic/username/password); upstream never runs it in CI",
+          }
+          for reason, tests in seen.items():
+              note = next((n for k, n in notes.items() if k in reason), "")
+              print(f"SKIPPED ({reason}){' - ' + note if note else ''}: {', '.join(sorted(set(tests)))}")
+          if not seen:
+              print("no skipped tests")
+          PY
+          echo "===== maven results summary ====="
+          grep -E -A12 "^\[(INFO|WARNING|ERROR)\] Results:" tests.log
+          grep -E "BUILD (SUCCESS|FAILURE)|Tests run: [0-9]+, Failures: [0-9]+, Errors: [0-9]+, Skipped: [0-9]+$" tests.log
+          exit $ret
+      - name: Upload camel-kafka jar
+        uses: actions/upload-artifact@v4
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          run-id: ${{ github.run_id }}
-          pr-id: ${{ github.event.issue.number }}
-          comment-id: ${{ github.event.comment.id }}
-          comment-body: ${{ github.event.comment.body }}
+          name: camel-kafka-jar
+          path: components/camel-kafka/target/camel-kafka-4.0.0.jar
+          if-no-files-found: error
+      - name: archive logs
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: build-and-test-logs
+          path: |
+            build.log
+            tests.log
