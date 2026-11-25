@@ -32,11 +32,11 @@ public class KafkaSegmentDecorator extends AbstractMessagingSegmentDecorator {
     /**
      * Constants copied from {@link org.apache.camel.component.kafka.KafkaConstants}
      */
-    protected static final String PARTITION_KEY = "kafka.PARTITION_KEY";
-    protected static final String PARTITION = "kafka.PARTITION";
-    protected static final String KEY = "kafka.KEY";
-    protected static final String TOPIC = "kafka.TOPIC";
-    protected static final String OFFSET = "kafka.OFFSET";
+    protected static final String PARTITION_KEY = "CamelKafkaPartitionKey";
+    protected static final String PARTITION = "CamelKafkaPartition";
+    protected static final String KEY = "CamelKafkaKey";
+    protected static final String TOPIC = "CamelKafkaTopic";
+    protected static final String OFFSET = "CamelKafkaOffset";
 
     @Override
     public String getComponent() {

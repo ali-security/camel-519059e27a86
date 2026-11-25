@@ -5093,10 +5093,10 @@ public interface KafkaEndpointBuilderFactory {
          * 
          * Group: producer
          * 
-         * @return the name of the header {@code kafka.PARTITION_KEY}.
+         * @return the name of the header {@code KafkaPartitionKey}.
          */
         public String kafkaPartitionKey() {
-            return "kafka.PARTITION_KEY";
+            return "CamelKafkaPartitionKey";
         }
 
         /**
@@ -5106,10 +5106,10 @@ public interface KafkaEndpointBuilderFactory {
          * 
          * Group: consumer
          * 
-         * @return the name of the header {@code kafka.PARTITION}.
+         * @return the name of the header {@code KafkaPartition}.
          */
         public String kafkaPartition() {
-            return "kafka.PARTITION";
+            return "CamelKafkaPartition";
         }
 
         /**
@@ -5122,10 +5122,10 @@ public interface KafkaEndpointBuilderFactory {
          * Required: true
          * Group: common
          * 
-         * @return the name of the header {@code kafka.KEY}.
+         * @return the name of the header {@code KafkaKey}.
          */
         public String kafkaKey() {
-            return "kafka.KEY";
+            return "CamelKafkaKey";
         }
 
         /**
@@ -5135,10 +5135,10 @@ public interface KafkaEndpointBuilderFactory {
          * 
          * Group: consumer
          * 
-         * @return the name of the header {@code kafka.TOPIC}.
+         * @return the name of the header {@code KafkaTopic}.
          */
         public String kafkaTopic() {
-            return "kafka.TOPIC";
+            return "CamelKafkaTopic";
         }
 
         /**
@@ -5149,10 +5149,10 @@ public interface KafkaEndpointBuilderFactory {
          * 
          * Group: producer
          * 
-         * @return the name of the header {@code kafka.OVERRIDE_TOPIC}.
+         * @return the name of the header {@code KafkaOverrideTopic}.
          */
         public String kafkaOverrideTopic() {
-            return "kafka.OVERRIDE_TOPIC";
+            return "CamelKafkaOverrideTopic";
         }
 
         /**
@@ -5162,10 +5162,10 @@ public interface KafkaEndpointBuilderFactory {
          * 
          * Group: consumer
          * 
-         * @return the name of the header {@code kafka.OFFSET}.
+         * @return the name of the header {@code KafkaOffset}.
          */
         public String kafkaOffset() {
-            return "kafka.OFFSET";
+            return "CamelKafkaOffset";
         }
 
         /**
@@ -5175,10 +5175,10 @@ public interface KafkaEndpointBuilderFactory {
          * 
          * Group: consumer
          * 
-         * @return the name of the header {@code kafka.HEADERS}.
+         * @return the name of the header {@code KafkaHeaders}.
          */
         public String kafkaHeaders() {
-            return "kafka.HEADERS";
+            return "CamelKafkaHeaders";
         }
 
         /**
@@ -5189,11 +5189,10 @@ public interface KafkaEndpointBuilderFactory {
          * 
          * Group: consumer
          * 
-         * @return the name of the header {@code
-         * kafka.LAST_RECORD_BEFORE_COMMIT}.
+         * @return the name of the header {@code KafkaLastRecordBeforeCommit}.
          */
         public String kafkaLastRecordBeforeCommit() {
-            return "kafka.LAST_RECORD_BEFORE_COMMIT";
+            return "CamelKafkaLastRecordBeforeCommit";
         }
 
         /**
@@ -5205,10 +5204,10 @@ public interface KafkaEndpointBuilderFactory {
          * 
          * Group: consumer
          * 
-         * @return the name of the header {@code kafka.LAST_POLL_RECORD}.
+         * @return the name of the header {@code KafkaLastPollRecord}.
          */
         public String kafkaLastPollRecord() {
-            return "kafka.LAST_POLL_RECORD";
+            return "CamelKafkaLastPollRecord";
         }
 
         /**
@@ -5218,10 +5217,10 @@ public interface KafkaEndpointBuilderFactory {
          * 
          * Group: consumer
          * 
-         * @return the name of the header {@code kafka.TIMESTAMP}.
+         * @return the name of the header {@code KafkaTimestamp}.
          */
         public String kafkaTimestamp() {
-            return "kafka.TIMESTAMP";
+            return "CamelKafkaTimestamp";
         }
 
         /**
@@ -5233,10 +5232,10 @@ public interface KafkaEndpointBuilderFactory {
          * 
          * Group: producer
          * 
-         * @return the name of the header {@code kafka.OVERRIDE_TIMESTAMP}.
+         * @return the name of the header {@code KafkaOverrideTimestamp}.
          */
         public String kafkaOverrideTimestamp() {
-            return "kafka.OVERRIDE_TIMESTAMP";
+            return "CamelKafkaOverrideTimestamp";
         }
 
         /**
